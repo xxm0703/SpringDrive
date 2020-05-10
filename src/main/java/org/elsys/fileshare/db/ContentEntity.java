@@ -17,4 +17,11 @@ public class ContentEntity {
     @JsonIgnore
     @OneToOne(mappedBy = "content", cascade = CascadeType.ALL)
     public NodeEntity file;
+
+    public ContentEntity() {
+    }
+
+    public ContentEntity(@NotNull String text) {
+        this.text = text;
+    }
 }

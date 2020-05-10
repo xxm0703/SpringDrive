@@ -3,8 +3,8 @@ package org.elsys.fileshare;
 import org.elsys.fileshare.db.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,11 +21,11 @@ public class AccountController {
 
     @PostMapping("/login")
     @ResponseStatus(HttpStatus.OK)
-    public Map<String, Object> login(@RequestBody LoginContainer candidate) {
+    public ResponseEntity<?> login(@RequestBody CredentialsContainer candidate) {
         UserEntity entry = users.findByUsername(candidate.username);
 
         if (!entry.correctPass(candidate.password)) {
-            throw new HttpClientErrorException(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
         entry.uuid = UUID.randomUUID().toString();
@@ -36,17 +36,18 @@ public class AccountController {
         response.put("user", entry);
         response.put("node", new NodeInfo(entry));
 
-        return response;
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public void create(@RequestBody LoginContainer candidate) {
-        if (candidate == null) throw new HttpClientErrorException(HttpStatus.BAD_REQUEST);
+    public ResponseEntity<?> create(@RequestBody CredentialsContainer candidate) {
+        if (candidate == null)
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         NodeEntity root = new NodeEntity("root", null);
         nodes.save(root);
         final UserEntity userEntity = new UserEntity(candidate.username, candidate.password, root);
         users.save(userEntity);
-
+        return login(candidate);
     }
 }

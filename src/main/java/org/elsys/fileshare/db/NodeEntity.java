@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,8 +23,8 @@ public class NodeEntity {
     @JoinColumn(name = "parent_id")
     public NodeEntity parent;
 
-    @OneToMany(mappedBy = "parent")
-    public List<NodeEntity> children;
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
+    public List<NodeEntity> children = new LinkedList<>();
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "content_id")
@@ -38,8 +39,6 @@ public class NodeEntity {
 
     @PrePersist
     protected void onCreate() {
-//        if (parent == null)
-//            parent = this;
         createdAt = new Date();
     }
 

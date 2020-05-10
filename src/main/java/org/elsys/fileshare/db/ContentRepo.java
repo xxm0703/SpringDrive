@@ -4,7 +4,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface NodeRepo extends JpaRepository<NodeEntity, Integer> {
-    NodeEntity findById(int id);
-    NodeEntity deleteById(int id);
+public interface ContentRepo extends JpaRepository<ContentEntity, Integer> {
+    ContentEntity findById(int id);
 }
