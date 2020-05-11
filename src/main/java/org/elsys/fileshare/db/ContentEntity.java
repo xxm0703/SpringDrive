@@ -3,7 +3,6 @@ package org.elsys.fileshare.db;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotNull;
 
 @Entity(name = "content")
 public class ContentEntity {
@@ -11,8 +10,8 @@ public class ContentEntity {
     @GeneratedValue
     public Integer id;
 
-    @NotNull
-    public String text;
+    @Lob
+    public byte[] text;
 
     @JsonIgnore
     @OneToOne(mappedBy = "content", cascade = CascadeType.ALL)
@@ -21,7 +20,7 @@ public class ContentEntity {
     public ContentEntity() {
     }
 
-    public ContentEntity(@NotNull String text) {
+    public ContentEntity(byte[] text) {
         this.text = text;
     }
 }

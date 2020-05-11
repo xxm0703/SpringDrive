@@ -1,12 +1,13 @@
 package org.elsys.fileshare.db;
 
+import java.sql.Blob;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class NodeInfo {
     public final int id;
     public final String name;
-    public final String content;
+    public final byte[] content;
     public final List<Child> children;
     public final int parent;
 
