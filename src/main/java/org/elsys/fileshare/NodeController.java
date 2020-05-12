@@ -1,13 +1,11 @@
 package org.elsys.fileshare;
 
 import org.elsys.fileshare.db.*;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
-import java.sql.Blob;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,6 +33,24 @@ public class NodeController {
         final NodeEntity node = this.nodes.findById(id);
 
         return ResponseEntity.ok(getResponse(user, node));
+    }
+
+    @GetMapping("/download/{id}")
+    public HttpEntity<byte[]> downloadBin(@RequestParam String token,
+                                          @PathVariable int id) throws IOException {
+
+        if (!this.validateOwnership(token, id))
+            return ResponseEntity.badRequest().body(null);
+
+        NodeEntity entity = nodes.findById(id);
+
+        HttpHeaders header = new HttpHeaders();
+        header.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        header.set(HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename=" + entity.name);
+        header.setContentLength(entity.content.text.length);
+
+        return new HttpEntity<>(entity.content.text, header);
     }
 
     @DeleteMapping("/{id}")
@@ -91,7 +107,6 @@ public class NodeController {
         return ResponseEntity.accepted().body(null);
     }
 
-    @NotNull
     private Map<String, Object> getResponse(UserEntity user, NodeEntity node) {
         Map<String, Object> response = new HashMap<>();
         response.put("token", user.uuid);

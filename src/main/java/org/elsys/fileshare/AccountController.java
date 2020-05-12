@@ -24,7 +24,7 @@ public class AccountController {
     public ResponseEntity<?> login(@RequestBody CredentialsContainer candidate) {
         UserEntity entry = users.findByUsername(candidate.username);
 
-        if (!entry.correctPass(candidate.password)) {
+        if (entry == null || !entry.correctPass(candidate.password)) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
@@ -46,7 +46,7 @@ public class AccountController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         NodeEntity root = new NodeEntity("root", null);
         nodes.save(root);
-        final UserEntity userEntity = new UserEntity(candidate.username, candidate.password, root);
+        final UserEntity userEntity = new UserEntity(candidate, root);
         users.save(userEntity);
         return login(candidate);
     }

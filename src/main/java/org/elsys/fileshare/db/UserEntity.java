@@ -19,20 +19,29 @@ public class UserEntity {
     @NotNull
     private String password;
 
+    @JsonIgnore
+    @NotNull
+    public String email = null;
+
     @OneToOne(optional = false, cascade = CascadeType.ALL)
     @JoinColumn(name = "root_id", nullable = false)
     @JsonIgnore
     private NodeEntity root;
+
     @JsonIgnore
     public String uuid;
+    @JsonIgnore
+    @NotNull
+    public boolean enabled = false;
 
     public UserEntity() {
     }
 
-    public UserEntity(@NotNull String username, @NotNull String password, NodeEntity root) {
-        this.username = username;
-        setPassword(password);
+    public UserEntity(CredentialsContainer data, NodeEntity root) {
         this.root = root;
+        this.username = data.username;
+        this.email = data.email;
+        setPassword(data.password);
     }
 
     public NodeEntity getRoot() {
