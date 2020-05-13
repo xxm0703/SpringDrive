@@ -30,6 +30,10 @@ public class NodeEntity {
     @JoinColumn(name = "content_id")
     public ContentEntity content;
 
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "node")
+    public LinkEntity link;
+
+
     @JsonIgnore
     @OneToOne(mappedBy = "root")
     public UserEntity owner;

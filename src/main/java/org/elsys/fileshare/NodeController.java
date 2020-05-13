@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,6 +17,9 @@ public class NodeController {
     UserRepo users;
 
     @Autowired
+    LinkRepo links;
+
+    @Autowired
     NodeRepo nodes;
 
     @Autowired
@@ -23,23 +27,64 @@ public class NodeController {
 
     @GetMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<?> fetch(@RequestParam String token,
-                                   @PathVariable int id) {
+    public ResponseEntity<?> fetch(HttpServletRequest request,
+                                   @RequestParam String token,
+                                   @PathVariable int id,
+                                   @RequestParam(required = false) String link) {
 
-        if (!this.validateOwnership(token, id))
+        if (!this.validateOwnership(token, id, link))
             return ResponseEntity.badRequest().body(null);
 
         final UserEntity user = this.users.findByUuid(token);
         final NodeEntity node = this.nodes.findById(id);
 
-        return ResponseEntity.ok(getResponse(user, node));
+        return ResponseEntity.ok(getResponse(user, node, request.getServerName() + ':' + request.getServerPort()));
+    }
+
+    @GetMapping("/link/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<?> generateLink(@RequestParam String token,
+                                          @PathVariable int id,
+                                          @RequestParam(required = false) String link) {
+
+        final NodeEntity node = this.nodes.findById(id);
+
+        if (!this.validateOwnership(token, id, null) || node.link != null) {
+            return ResponseEntity.badRequest().body(null);
+        }
+
+        final LinkEntity linkEntity = new LinkEntity(node);
+
+        nodes.save(node);
+        links.save(linkEntity);
+
+        return ResponseEntity.ok().body(null);
+    }
+
+    @GetMapping("/shared")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<?> getInfo(@RequestParam String token,
+                                          @RequestParam String link) {
+
+        if (!users.existsByUuid(token))
+            return ResponseEntity.badRequest().body(null);
+
+        final LinkEntity linkEntity = links.findByToken(link);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("file", linkEntity.node.content != null);
+        response.put("nodeId", linkEntity.node.id);
+        response.put("name", linkEntity.node.name);
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/download/{id}")
     public HttpEntity<byte[]> downloadBin(@RequestParam String token,
-                                          @PathVariable int id) throws IOException {
+                                          @PathVariable int id,
+                                          @RequestParam(required = false) String link) throws IOException {
 
-        if (!this.validateOwnership(token, id))
+        if (!this.validateOwnership(token, id, link))
             return ResponseEntity.badRequest().body(null);
 
         NodeEntity entity = nodes.findById(id);
@@ -58,7 +103,7 @@ public class NodeController {
     public ResponseEntity<?> deleteNode(@RequestParam String token,
                                         @PathVariable int id) {
 
-        if (!this.validateOwnership(token, id))
+        if (!this.validateOwnership(token, id, null))
             return ResponseEntity.badRequest().body(null);
 
         this.nodes.deleteById(id);
@@ -71,7 +116,7 @@ public class NodeController {
                                         @PathVariable int id,
                                         @RequestParam(name = "name") String newName) {
 
-        if (!this.validateOwnership(token, id))
+        if (!this.validateOwnership(token, id, null))
             return ResponseEntity.badRequest().body(null);
 
         final NodeEntity node = this.nodes.findById(id);
@@ -94,7 +139,7 @@ public class NodeController {
             contents.save(contentEntity);
         }
 
-        if (!this.validateOwnership(data.token, parent_id)) {
+        if (!this.validateOwnership(data.token, parent_id, null)) {
             return ResponseEntity.badRequest().body(null);
         }
 
@@ -107,23 +152,28 @@ public class NodeController {
         return ResponseEntity.accepted().body(null);
     }
 
-    private Map<String, Object> getResponse(UserEntity user, NodeEntity node) {
+    private Map<String, Object> getResponse(UserEntity user, NodeEntity node, String addr) {
         Map<String, Object> response = new HashMap<>();
         response.put("token", user.uuid);
         response.put("user", user);
         response.put("node", new NodeInfo(node));
+        response.put("host", addr);
         return response;
     }
 
-    private boolean validateOwnership(String userToken, int nodeId) {
+    private boolean validateOwnership(String userToken, int nodeId, String link) {
         final UserEntity user = this.users.findByUuid(userToken);
+        final LinkEntity linkEntity = this.links.findByToken(link);
         NodeEntity node = this.nodes.findById(nodeId);
 
         if (user == null || node == null)
             return false;
 
-        while (node.parent != null)
+        while (node.parent != null) {
+            if (linkEntity != null && linkEntity.node.id.equals(node.id))
+                return true;
             node = node.parent;
+        }
         return node.owner.id == user.id;
     }
 

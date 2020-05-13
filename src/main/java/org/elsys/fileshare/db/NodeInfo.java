@@ -10,6 +10,7 @@ public class NodeInfo {
     public final byte[] content;
     public final List<Child> children;
     public final int parent;
+    public final String link;
 
     public NodeInfo(NodeEntity nodeEntity) {
         this.id = nodeEntity.id;
@@ -19,6 +20,7 @@ public class NodeInfo {
                 .collect(Collectors.toList());
 
         this.parent = nodeEntity.parent == null ? nodeEntity.id : nodeEntity.parent.id;
+        this.link = nodeEntity.link != null ? nodeEntity.link.token : null;
         this.content = nodeEntity.content != null ? nodeEntity.content.text : null;
     }
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.util.UUID;
 
 @Entity
 @Table(name = "users")
@@ -41,6 +42,7 @@ public class UserEntity {
         this.root = root;
         this.username = data.username;
         this.email = data.email;
+        this.uuid = UUID.randomUUID().toString();
         setPassword(data.password);
     }
 
